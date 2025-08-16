@@ -1,34 +1,17 @@
-# Use a base image with Java 21
-FROM eclipse-temurin:21-jdk-jammy as builder
+# Use the official Maven image with Java 21
+FROM maven:3.9.6-eclipse-temurin-21
 
 # Set working directory
 WORKDIR /app
 
-# Copy the Maven wrapper and pom.xml
-COPY mvnw .
-COPY .mvn/ .mvn/
-COPY pom.xml .
-
-# Download dependencies
-RUN ./mvnw dependency:go-offline -B
-
-# Copy the source code
-COPY src src
+# Copy the project files
+COPY . .
 
 # Build the application
-RUN ./mvnw package -DskipTests
-
-# Create a smaller runtime image
-FROM eclipse-temurin:21-jre-jammy
-
-# Set working directory
-WORKDIR /app
-
-# Copy the JAR file from the builder stage
-COPY --from=builder /app/target/*.jar app.jar
+RUN mvn clean package -DskipTests
 
 # Expose the port your app runs on
 EXPOSE 8080
 
 # Command to run the application
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=prod"]
+CMD ["java", "-jar", "target/*.jar", "--spring.profiles.active=prod"]
